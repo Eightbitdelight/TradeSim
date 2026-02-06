@@ -1,0 +1,7 @@
+{
+  "name": "TradeSim",
+  "description": "A sophisticated mobile-first trading simulator that combines real-time data tracking with Gemini-powered market analysis and portfolio suggestions.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
