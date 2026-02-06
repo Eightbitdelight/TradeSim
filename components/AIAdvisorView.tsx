@@ -1,14 +1,16 @@
 
 import React from 'react';
-import { AIAdvice } from '../types';
+import { AIAdvice, Stock } from '../types';
 
 interface AIAdvisorViewProps {
   advices: AIAdvice[];
+  stocks: Stock[];
   onAnalyze: () => void;
+  onSelectStock: (stock: Stock) => void;
   isAnalyzing: boolean;
 }
 
-const AIAdvisorView: React.FC<AIAdvisorViewProps> = ({ advices, onAnalyze, isAnalyzing }) => {
+const AIAdvisorView: React.FC<AIAdvisorViewProps> = ({ advices, stocks, onAnalyze, onSelectStock, isAnalyzing }) => {
   return (
     <div className="p-6 space-y-6 animate-in zoom-in-95 duration-300">
       <div className="text-center space-y-2 py-4">
@@ -31,32 +33,48 @@ const AIAdvisorView: React.FC<AIAdvisorViewProps> = ({ advices, onAnalyze, isAna
 
       <div className="space-y-4">
         {advices.length > 0 ? (
-          advices.map((advice, i) => (
-            <div key={i} className="bg-zinc-900 border border-white/10 p-5 rounded-3xl relative overflow-hidden group">
-               <div className={`absolute top-0 right-0 px-4 py-1 rounded-bl-xl text-[10px] font-bold uppercase tracking-widest ${
-                 advice.action === 'BUY' ? 'bg-emerald-500/20 text-emerald-400' : 
-                 advice.action === 'SELL' ? 'bg-rose-500/20 text-rose-400' : 'bg-zinc-700 text-zinc-300'
-               }`}>
-                 {advice.action}
-               </div>
-               
-               <div className="flex items-center gap-2 mb-3">
-                 <h4 className="text-xl font-black">{advice.symbol}</h4>
-                 <span className="text-xs text-zinc-500">• {advice.sentiment} sentiment</span>
-               </div>
-               
-               <p className="text-sm text-zinc-300 leading-relaxed mb-4 italic">"{advice.reason}"</p>
-               
-               <div className="flex items-center justify-between pt-4 border-t border-white/5">
-                 <div className="flex gap-1">
-                    {[1,2,3,4,5].map(star => (
-                      <div key={star} className={`w-3 h-3 rounded-full ${star <= advice.confidence / 20 ? 'bg-blue-500' : 'bg-zinc-800'}`}></div>
-                    ))}
+          advices.map((advice, i) => {
+            const stock = stocks.find(s => s.symbol === advice.symbol);
+            
+            return (
+              <div key={i} className="bg-zinc-900 border border-white/10 p-5 rounded-3xl relative overflow-hidden group">
+                 <div className={`absolute top-0 right-0 px-4 py-1 rounded-bl-xl text-[10px] font-bold uppercase tracking-widest ${
+                   advice.action === 'BUY' ? 'bg-emerald-500/20 text-emerald-400' : 
+                   advice.action === 'SELL' ? 'bg-rose-500/20 text-rose-400' : 'bg-zinc-700 text-zinc-300'
+                 }`}>
+                   {advice.action}
                  </div>
-                 <span className="text-[10px] text-zinc-600 font-bold uppercase">Confidence Score: {advice.confidence}%</span>
-               </div>
-            </div>
-          ))
+                 
+                 <div className="flex items-center gap-2 mb-3">
+                   <h4 className="text-xl font-black">{advice.symbol}</h4>
+                   <span className="text-xs text-zinc-500">• {advice.sentiment} sentiment</span>
+                 </div>
+                 
+                 <p className="text-sm text-zinc-300 leading-relaxed mb-4 italic">"{advice.reason}"</p>
+                 
+                 <div className="flex items-center justify-between pt-4 border-t border-white/5 mb-4">
+                   <div className="flex gap-1">
+                      {[1,2,3,4,5].map(star => (
+                        <div key={star} className={`w-3 h-3 rounded-full ${star <= advice.confidence / 20 ? 'bg-blue-500' : 'bg-zinc-800'}`}></div>
+                      ))}
+                   </div>
+                   <span className="text-[10px] text-zinc-600 font-bold uppercase">Confidence Score: {advice.confidence}%</span>
+                 </div>
+
+                 {stock && (
+                   <button 
+                    onClick={() => onSelectStock(stock)}
+                    className={`w-full py-3 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] transition-all active:scale-95 ${
+                      advice.action === 'BUY' ? 'bg-emerald-500 text-emerald-950' : 
+                      advice.action === 'SELL' ? 'bg-rose-500 text-rose-950' : 'bg-zinc-800 text-zinc-300'
+                    }`}
+                   >
+                     {advice.action === 'HOLD' ? 'View Details' : `Execute ${advice.action}`}
+                   </button>
+                 )}
+              </div>
+            );
+          })
         ) : !isAnalyzing && (
           <div className="text-center py-10">
             <p className="text-zinc-600 text-sm italic">Click "Run Analysis" to get started.</p>

@@ -9,6 +9,12 @@ import HomeView from './components/HomeView';
 import Navigation from './components/Navigation';
 import TradeModal from './components/TradeModal';
 
+const STORAGE_KEYS = {
+  BALANCE: 'tradesim_balance',
+  HOLDINGS: 'tradesim_holdings',
+  STOCKS: 'tradesim_stocks',
+};
+
 const INITIAL_BALANCE = 100000;
 const INITIAL_STOCKS: Stock[] = [
   // US Tech
@@ -27,14 +33,40 @@ const INITIAL_STOCKS: Stock[] = [
 ];
 
 const App: React.FC = () => {
-  const [balance, setBalance] = useState(INITIAL_BALANCE);
-  const [holdings, setHoldings] = useState<Holding[]>([]);
-  const [stocks, setStocks] = useState<Stock[]>(INITIAL_STOCKS);
+  // Initialize state from localStorage or defaults
+  const [balance, setBalance] = useState<number>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.BALANCE);
+    return saved !== null ? parseFloat(saved) : INITIAL_BALANCE;
+  });
+
+  const [holdings, setHoldings] = useState<Holding[]>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.HOLDINGS);
+    return saved !== null ? JSON.parse(saved) : [];
+  });
+
+  const [stocks, setStocks] = useState<Stock[]>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.STOCKS);
+    return saved !== null ? JSON.parse(saved) : INITIAL_STOCKS;
+  });
+
   const [currentView, setCurrentView] = useState<View>('HOME');
   const [selectedStock, setSelectedStock] = useState<Stock | null>(null);
   const [showTradeModal, setShowTradeModal] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [aiAdvices, setAiAdvices] = useState<AIAdvice[]>([]);
+
+  // Persistence side effects
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.BALANCE, balance.toString());
+  }, [balance]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.HOLDINGS, JSON.stringify(holdings));
+  }, [holdings]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.STOCKS, JSON.stringify(stocks));
+  }, [stocks]);
 
   // Simulation of real-time price changes
   useEffect(() => {
@@ -130,7 +162,7 @@ const App: React.FC = () => {
       <div className="p-6 bg-zinc-900/50 backdrop-blur-lg border-b border-white/10 shrink-0">
         <div className="flex justify-between items-end">
           <div>
-            <p className="text-zinc-400 text-sm font-medium">Portfolio Balance</p>
+            <p className="text-zinc-400 text-sm font-medium">Portfolio Value</p>
             <h1 className="text-3xl font-bold tracking-tight">
               ${portfolioValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </h1>
@@ -148,7 +180,15 @@ const App: React.FC = () => {
         {currentView === 'HOME' && <HomeView stocks={stocks} holdings={holdings} onSelectStock={(s) => { setSelectedStock(s); setShowTradeModal(true); }} />}
         {currentView === 'MARKET' && <MarketView stocks={stocks} onSelectStock={(s) => { setSelectedStock(s); setShowTradeModal(true); }} onAddStock={handleAddStock} />}
         {currentView === 'PORTFOLIO' && <PortfolioView stocks={stocks} holdings={holdings} balance={balance} onSelectStock={(s) => { setSelectedStock(s); setShowTradeModal(true); }} />}
-        {currentView === 'AI' && <AIAdvisorView advices={aiAdvices} onAnalyze={runAnalysis} isAnalyzing={isAnalyzing} />}
+        {currentView === 'AI' && (
+          <AIAdvisorView 
+            advices={aiAdvices} 
+            stocks={stocks}
+            onAnalyze={runAnalysis} 
+            onSelectStock={(s) => { setSelectedStock(s); setShowTradeModal(true); }}
+            isAnalyzing={isAnalyzing} 
+          />
+        )}
       </div>
 
       {/* Trade Modal */}
